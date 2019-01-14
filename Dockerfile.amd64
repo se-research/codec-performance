@@ -1,0 +1,82 @@
+# Copyright (C) 2019  Christian Berger
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+FROM ubuntu:18.04
+MAINTAINER Christian Berger "christian.berger@gu.se"
+RUN apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get dist-upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        cmake \
+        build-essential \
+        git \
+        perl \
+        nasm \
+        yasm \
+        wget
+
+# Install openh264 v1.8.0.
+RUN cd /tmp && \
+    git clone --depth 1 --branch v1.8.0 https://github.com/cisco/openh264.git && \
+    cd openh264 && mkdir b && cd b \
+    make -j2 -f ../Makefile libraries && \
+    make -j2 -f ../Makefile binaries && make -f ../Makefile install && \
+    cp h264enc /usr/local/bin && \
+    cp h264dec /usr/local/bin
+
+RUN cd /tmp && wget http://ciscobinary.openh264.org/libopenh264-1.8.0-linux64.4.so.bz2 && \
+    bunzip2 libopenh264-1.8.0-linux64.4.so.bz2 && \
+    cp libopenh264-1.8.0-linux64.4.so /usr/local/lib/libopenh264.so.1.8.0 && \
+    rm -f libopenh264-1.8.0-linux64.4*
+
+# Install x264, stable.
+RUN cd /tmp && \
+    git clone --depth 1 --branch stable http://git.videolan.org/git/x264.git && \
+    cd x264 && \
+    ./configure --disable-opencl \
+                --disable-gpl \
+                --disable-avs \
+                --disable-swscale \
+                --disable-lavf \
+                --disable-ffms \
+                --disable-gpac \
+                --disable-lsmash \
+                --enable-pic \
+                --enable-static \
+                --enable-strip \
+                --prefix=/usr/local && \
+    make -j2 && make install && \
+    cd /tmp && rm -fr x264
+
+# Install vpx, v1.7.0.
+RUN cd /tmp && \
+    git clone --depth 1 --branch v1.7.0 https://github.com/webmproject/libvpx.git && \
+    mkdir build && cd build && \
+    ../libvpx/configure --disable-docs \
+                        --enable-tools \
+                        --enable-vp8 \
+                        --enable-vp9 \
+                        --enable-libyuv \
+                        --disable-unit-tests \
+                        --disable-webm-io \
+                        --disable-postproc && \
+    make -j4 && make install && \
+    cd /tmp && rm -fr libvpx build
+
+# Install imagemagick for picture quality.
+RUN apt-get install -y --no-install-recommends \
+        imagemagick
+
