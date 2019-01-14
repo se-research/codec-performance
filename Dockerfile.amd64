@@ -84,5 +84,7 @@ RUN cd /tmp && \
 
 # Install imagemagick for picture quality.
 RUN apt-get install -y --no-install-recommends \
-        imagemagick
+        imagemagick \
+        ffmpeg
+
 
