@@ -82,9 +82,15 @@ RUN cd /tmp && \
     make -j4 && make install && \
     cd /tmp && rm -fr libvpx build
 
+# Install libyuv for picture quality.
+RUN cd /tmp && \
+    git clone --depth 1 https://chromium.googlesource.com/libyuv/libyuv && \
+    cd libyuv &&\
+    make -f linux.mk psnr yuvconvert && cp psnr yuvconvert /usr/local/bin && \
+    cd /tmp && rm -fr libyuv
+
 # Install imagemagick for picture quality.
 RUN apt-get install -y --no-install-recommends \
         imagemagick \
         ffmpeg
-
 
